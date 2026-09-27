@@ -11,9 +11,7 @@ The code is written in Python, and relies heavily on [**TensorFlow**](https://ww
 As described in the thesis, [**TensorFlow Probability**](https://www.tensorflow.org/probability/api_docs/python/tfp)  is used to sample from the posterior distribution,  
 using Hamiltonian Monte Carlo.  
 Note that we have also used TensorFlow Probability to sample from the prior distributions considered in the thesis.  
-A combination of [**Pandas**](https://pandas.pydata.org/docs/reference/index.html#api) and [**Plotnine**](https://plotnine.org/reference/) was then used to create the various plots used throughout the thesis.  
-The APIs of TensorFlow (Probability), Pandas and Plotnine are well documented by their respective contributors,  
-URLs to the documentation of each library is given below.  
+A combination of [**Pandas**](https://pandas.pydata.org/docs/reference/index.html#api) and [**Plotnine**](https://plotnine.org/reference/) was then used to create the various plots used throughout the thesis.   
 
 The code is licenced under a general MIT licence, see **LICENSE**.
 

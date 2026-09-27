@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=82"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TMA4900"
+version = "0.1.0"
+license-files = [
+    "*-LICENSE"
+]
+authors = [
+    {name = "Rasmus Grødeland", email = "rasmus.grodeland@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "iniconfig>=2.1.0",
+    "numpy>=2.3.2",
+    "scipy>=1.16.1",
+    "pandas>=2.3.2",
+    "tidypandas >= 0.3.0",
+    "tensorflow==2.20.0",
+    "tensorflow-probability==0.25.0",
+    "keras==3.13.2",
+    "tf_keras==2.20.1",
+    "patchworklib>=0.6.5",
+    "matplotlib>=3.10.6",
+    "plotnine>=0.15.0",
+    "plotnine3d>=0.0.6",     
+]

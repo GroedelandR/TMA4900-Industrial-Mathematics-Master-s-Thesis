@@ -1,0 +1,140 @@
+[model.general]
+number_of_reservoirs = 5  
+number_of_batches = 5
+run_eagerly = true
+seed = [4900, 2026]
+
+[model.physical]
+standard_gravity = 9.80665
+co2_brine_density_difference = 3e2
+co2_in_situ_density = 5.0
+cubic_meter_to_barrels_of_oil = 6.28981077
+
+[model.simulator.smoothing]
+activation = 1e-6 
+softmin = 1e-3
+softclip = 1e-3
+
+[model.simulator.other]
+mass_injection_rate = [0.04, 0.0, 0.0, 0.0, 0.0]
+epsilon = 1e-6
+
+[model.prior.latent_states.log_lateral]  
+# Horizontal reservoir parameter (log-scale in m)
+mean = [7.0, 7.0, 7.0, 7.0, 7.0]
+variance = 0.25
+correlation = [
+    [1.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 1.0]
+]
+
+[model.prior.latent_states.log_vertical]
+# Vertical reservoir parameter (log-scale in m)  
+mean = [4.0, 4.0, 4.0, 4.0, 4.0]
+variance = 0.25
+correlation = [
+    [1.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 1.0]
+]
+
+[model.prior.latent_states.log_threshold_pressure]
+# Cap rock threshold pressure (log-scale in kPa)  
+mean = [5.0, 5.0, 5.0, 5.0, 5.0]
+variance = 0.25
+correlation = [
+    [1.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 1.0]
+]
+
+[model.prior.latent_states.unconstrained_flow] 
+mean = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+variance = 0.25
+correlation = [
+    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+]
+
+[model.prior.latent_states.unconstrained_activation] 
+mean = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+variance = 0.25
+correlation = [
+    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+]
+
+[model.prior.graph] 
+sparsity_parameter = [1.0, 1.0, 1.0]
+distance_parameter = [5.0, 5.0, 5.0]
+
+[model.acquisition]
+height_threshold = [1.0, 1.0, 1.0, 1.0, 1.0]
+acquisition_noise_variance = [0.25, 0.25, 0.25, 0.25, 0.25]
+
+[model.utils.plot]
+number_of_aggregate_samples = 7.5e4
+max_time_simulation = 2.25e2
+max_time_density_plot = 2e2
+max_time_height_over_time_plot = 1e2
+max_height_height_at_failure_time = 2.25e2
+grid_resolution = 5e2
+
+[model.latent_state_kernel]
+step_size = [1e-2, 1e-2, 1e-2, 1e-2, 1e-2]
+number_of_leapfrog_steps = 5
+number_of_resulting_samples = 1e4
+number_of_burnin_steps = 2e3
+
+[model.posterior]
+graphs = [
+    [
+        [0, 1, 0, 0, 0],
+        [0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0]
+    ],
+    [
+        [0, 1, 1, 0, 0],
+        [0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 1],
+        [0, 0, 0, 0, 0]
+    ]
+]
+times = [
+    2.5, 25.0, 25.0
+]
+measurements = [
+    [15.0,  0.0,  0.0,  0.0, 0.0],
+    [22.0, 20.0, 18.0, 10.0, 0.0],
+    [25.0, 18.0, 20.0,  0.0, 20.0]
+]
+measurement_indices = [
+    [0, 1],
+    [0, 2]
+]

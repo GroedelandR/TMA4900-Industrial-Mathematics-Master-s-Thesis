@@ -66,3 +66,5 @@ Apart from these files, the repository also includes the following,
 - **README.mc** The current markdown file you are reading.  
 
 - **pyproject.toml** Lists the dependencies of the source code.  
+
+- **thesis_RG.pdf** Master's thesis as submitted for evaluation in TMA4900 Industrial Mathematics Master's Thesis.

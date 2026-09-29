@@ -48,7 +48,7 @@ To compute the log-likelihood of a given observation, the method *AcquisitionMod
 - **mcmc.py** Contains the classes *ConditionalPosterior* and *LatentStateKernel*, which are implementations of the full conditional distribution of unconstrained parameters $\boldsymbol{\tilde \theta}$ and the HMC kernel respectively.  
 To evaluate the full conditional log-probability of $\boldsymbol{\tilde \theta}$, the method *ConditionalPosterior.log_prob()* is called.  
 To sample a Markov chain on $\boldsymbol{\tilde \theta}$, the method *LatentStateKernel.sample_chain()* is called instead.  
-Note that to obtain the corresponding constrained parameters $\boldsymbol{\theta}$, the internal method *Simulator._get_states()* have to be called.  
+Note that to obtain the corresponding constrained parameters $\boldsymbol{\theta}$, the internal method *Simulator._get_states()* has to be called.  
 This method is called automatically when calling *Simulator.simulate()* however.  
 
 - **utils.py** Contains various functions for easy plotting.  

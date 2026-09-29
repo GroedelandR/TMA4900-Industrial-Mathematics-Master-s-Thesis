@@ -37,7 +37,7 @@ Below is a brief description of each of the files within this directory,
 To simulate the plume heights at time *t*, the method *Simulator.simulate()* is called.  
  
 - **priors.py** Contains the class *LatentStatePrior*, which is an implementation of the prior on unconstrained continuous parameters $\boldsymbol{\tilde \theta}$.  
-We note that in the case of the unconstrained continuous parameters, the simulator makes the necessary transformations to obtain the corresponding constrained parameters $\boldsymbol{\theta}$.  
+We note that the simulator makes the necessary transformations to obtain the corresponding constrained parameters $\boldsymbol{\theta}$.  
 This is done so that the McMC kernel can work in unconstrained space.  
 To sample from the prior, the method *LatentStatePrior.sample()* is called.  
 To compute the log-probability of a specific sample, the method *LatentStatePrior.log_prob()* is called instead.  

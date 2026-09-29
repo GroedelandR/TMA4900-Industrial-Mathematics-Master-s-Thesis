@@ -25,11 +25,23 @@ def plot(
     config: dict[str, Any],
     Simulator: tf.Module,
     LatentStatePrior: tf.Module,
-    GraphPrior: tf.Module,
-    graph_encoding: Optional[tf.Tensor] = None,
+    graph_encoding: tf.Tensor,
     num_aggregate_samples: Optional[int] = None,
     folder: Optional[str] = None,
 ) -> None:
+    """
+    Function to create the plots corresponding to the uncertainty propagation in Section 3.2.
+
+    Args:
+        config: Configuration dictionary. 
+        Simulator: Simulator object.
+        LatentStatePrior: Latent state prior object.
+        graph_encoding: DAG we condition on.
+        num_aggregate_samples: Number of prior samples to propagate through the simulator.
+        If unspecified, defaults to the configuration.
+        folder: Folder to save the figures to.
+        If unspecified, the figures are not saved.
+    """
     
     if num_aggregate_samples is None:
         num_aggregate_samples = int(
@@ -39,7 +51,6 @@ def plot(
 
     simulator = Simulator(config, num_aggregate_samples=num_aggregate_samples)
     latent_state_prior = LatentStatePrior(config)
-    graph_prior = GraphPrior(config)
     
     R = tf.constant(config["general"]["number_of_reservoirs"], dtype=tf.int32)
     time_grid = tf.linspace(
@@ -48,22 +59,10 @@ def plot(
         int(config["utils"]["plot"]["grid_resolution"])
     )
     
-    seed = tf.constant(config["general"]["seed"], dtype=tf.int32)
-    if graph_encoding is None:
-        latent_states_seed, graph_seed = tfp.random.split_seed(seed)
-        latent_states = latent_state_prior.sample(
-            num_samples=num_aggregate_samples,
-            seed=latent_states_seed
-        )        
-        graph_encoding = graph_prior.sample(
-            num_samples=num_aggregate_samples,
-            seed=graph_seed
-        )
-    else:
-        latent_states = latent_state_prior.sample(
-                    num_samples=num_aggregate_samples,
-                    seed=seed
-                )
+    latent_states = latent_state_prior.sample(
+        num_samples=num_aggregate_samples,
+        seed=tf.constant(config["general"]["seed"], dtype=tf.int32)
+    )
     
     states = simulator._get_states(
         latent_states=latent_states,
@@ -317,7 +316,15 @@ def plot_logistic_curves(
     x_min: float,
     x_max: float
 ) -> None:
-    
+    """
+    Function to plot the logistic curves for the simulator in Section 2.4. 
+
+    Args:
+        smoothness_params: Smoothness parameters to use (tau^min).
+        num_evals (int): Number of points to evaluate in total for each curve.
+        x_min (float): Lower limit for the x-axis.
+        x_max (float): Upper limit for the x-axis.
+    """
     smoothness_params = tf.convert_to_tensor(
         smoothness_params, 
         dtype=tf.float32
@@ -376,7 +383,29 @@ def sample_conditional_posteriors(
     num_burnin_steps: Optional[tf.Tensor] = None,
     allow_warm_start: bool = True
 ) -> dict[str, tf.Tensor]:
+    """
+    Function to sample from the full conditional distribution of the latent states (tilde theta)
+    using HMC. The function relies on the configurations file for both the DAGs, measurements and
+    measurement times needed to construct the full conditionals. The function treats each DAG as a 
+    separate batch and samples their corresponding full conditional distribution simultaneously.
+
+    Args:
+        config: Configurations dictionary.
+        ConditionalPosterior: Full conditional distribution class.
+        LatentStateKernel: HMC kernel class.
+        num_results: Number of samples to obtain from the distribution using HMC.
+        If unspecified, defaults to the configuration.
+        num_burnin_steps: Number of burnin samples.
+        If unspecified, defaults to the configuration.
+        allow_warm_start: If true, will use the last sample from the full conditional distribution 
+        of a single observation as the initial burnin sample for the full conditional on 2 observations,
+        and so on. If false, the initial burnin sample is drawn from the prior distribution.
+
+    Returns:
+        Dictionary containing the posterior samples, kernel diagnostics, conditional measurements and times.
+    """
     
+    # kernel settings
     if num_results is None:
         num_results = tf.cast(
             tf.constant(
@@ -385,7 +414,6 @@ def sample_conditional_posteriors(
             ),
             dtype=tf.int32
         )
-
     if num_burnin_steps is None:
         num_burnin_steps = tf.cast(
             tf.constant(
@@ -394,8 +422,9 @@ def sample_conditional_posteriors(
             ),
             dtype=tf.int32
         ) 
-                
-    graph_encodings = tf.cast(  # shape: [B, R, R]
+       
+    # DAGs         
+    graph_encodings = tf.cast(
         tf.constant(  
             config["posterior"]["graphs"],
             dtype=tf.int32
@@ -403,27 +432,28 @@ def sample_conditional_posteriors(
         dtype=tf.bool
     ) 
     
-    indices = tf.constant(  # shape: [B, T]
+    # measurements and measurement times
+    indices = tf.constant(
         config["posterior"]["measurement_indices"],
         dtype=tf.int32
     )
-    times = tf.gather(  # shape: [B, T]
+    times = tf.gather(
         tf.constant(
             config["posterior"]["times"],
             dtype=tf.float32
         ),
         indices=indices    
     ) 
-    measurements = tf.gather(  # shape: [B, T, R]
+    measurements = tf.gather(
         tf.constant(
             config["posterior"]["measurements"],
             dtype=tf.float32
         ),
         indices = indices    
     ) 
-    
     num_measurements = tf.shape(measurements)[1] 
     
+    # seed for reproducibility
     seeds = tfp.random.split_seed(
         tf.constant(config["general"]["seed"], dtype=tf.int32),
         n=num_measurements
@@ -494,7 +524,19 @@ def plot_marginal_densities(
     prior_densities: np.ndarray,
     density_labels: list[str],
 ) -> ggplot:
-    
+    """
+    Function to plot marginal prior densities.
+
+    Args:
+        parameter: Values on the x-axis.
+        parameter_label: Label for x-axis.
+        prior_densities: Marginal prior densities.
+        density_labels: Label for each prior density.
+
+    Returns:
+        ggplot object representing the plot.
+    """
+        
     df = pd.DataFrame({
         "parameter": np.tile(
             parameter,
@@ -526,6 +568,20 @@ def plot_contours(
     correlation: np.ndarray,
     parameter_labels: list[str]
 ) -> ggplot:
+    """
+    Function to plot contours of joint prior densities.
+
+    Args:
+        prior_densities: Computed joint densities.
+        x_axis: Parameter values on the x-axis.
+        y_axis: Parameter values on the y-axis.
+        highest_density_regions: HDRs whose contour lines we want to compute.  
+        correlation: Correlations used for the joint densities.
+        parameter_labels: Axes labels.
+
+    Returns:
+        ggplot object representing the plot.
+    """
     
     sorted_densities = np.sort(
         prior_densities.reshape(correlation.size, x_axis.size*y_axis.size),
@@ -594,7 +650,17 @@ def get_covariance_matrix(
     standard_deviation: np.ndarray,
     correlation: np.ndarray
 ) -> np.ndarray:
-    
+    """
+    Function to compute the covariance matrix used when plotting joint densities.
+
+    Args:
+        standard_deviation: Standard deviation of each marginal component.
+        correlation: Correlation between components.
+
+    Returns:
+        Covariance matrix.
+    """
+        
     covariance_matrix = (
         correlation[:, None, None] 
         * np.outer(standard_deviation, standard_deviation)[None, :, :]
@@ -614,7 +680,19 @@ def evaluate_density_CTP(
     type: Literal["marginal", "joint"],
     correlation: Optional[np.ndarray] = None
 ) -> tuple[np.ndarray, np.ndarray, Union[list[str], np.ndarray]]:
+    """
+    Evaluates the density for the CTPs.
 
+    Args:
+        unconstrained_mean: Unconstrained mean of the CTPs.
+        unconstrained_std: Unconstrained standard deviation of the CTPs.
+        type: Whether to compute the marginal or joint density.
+        correlation: Correlation of the CTPs, only used when evaluating the joint density.
+
+    Returns:
+        If marginal density is requested, CTPs whose density is evaluated, the evaluated densities and labels used for plotting.
+        If joint density is requested, CTPs on x- and y-axis whose joint density is evaluated and the evaluated densities.
+    """
     match type:
         
         case "marginal":     
@@ -683,7 +761,19 @@ def evaluate_density_relative_eCTP(
     type: Literal["marginal", "joint"],
     correlation: Optional[np.ndarray] = None
 ) -> tuple[np.ndarray, np.ndarray, Union[list[str], np.ndarray]]:
+    """
+    Evaluates the density for the eCTPs.
 
+    Args:
+        unconstrained_mean: Unconstrained mean of the eCTPs.
+        unconstrained_std: Unconstrained standard deviation of the eCTPs.
+        type: Whether to compute the marginal or joint density.
+        correlation: Correlation of the eCTPs, only used when evaluating the joint density.
+
+    Returns:
+        If marginal density is requested, eCTPs whose density is evaluated, the evaluated densities and labels used for plotting.
+        If joint density is requested, eCTPs on x- and y-axis whose joint density is evaluated and the evaluated densities.
+    """
     match type:
             
         case "marginal":     
@@ -732,7 +822,19 @@ def evaluate_density_relative_flow_rate(
     type: Literal["marginal", "joint"],
     correlation: Optional[np.ndarray] = None
 ) -> tuple[np.ndarray, np.ndarray, Union[list[str], np.ndarray]]:
+    """
+    Evaluates the density for the relative flow rates.
 
+    Args:
+        unconstrained_mean: Unconstrained mean of the relative flow rates.
+        unconstrained_std: Unconstrained standard deviation of the relative flow rates.
+        type: Whether to compute the marginal or joint density.
+        correlation: Correlation of the relative flow rates, only used when evaluating the joint density.
+
+    Returns:
+        If marginal density is requested, relative flow rates whose density is evaluated, the evaluated densities and labels used for plotting.
+        If joint density is requested, relative flow rates on x- and y-axis whose joint density is evaluated and the evaluated densities.
+    """
     A = np.array([[1, 0, -1], [0, 1, -1]])
     
     x = np.linspace(1e-4, 1-1e-4, 250)
@@ -803,8 +905,18 @@ def plot_likelihood(
     actual_height: np.ndarray,
     height_threshold: float,
     measurement_std: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> ggplot:
+    """
+    Function to plot the likelihood figure in Section 3.3.
 
+    Args:
+        actual_height: Actual height of the CO2 plume. 
+        height_threshold: Measurement threshold.
+        measurement_std: Measurement noise. 
+
+    Returns:
+        ggplot object representing the plot.
+    """
     lower_bound = norm.ppf(
         1e-3,
         loc=actual_height[:, None],
@@ -927,6 +1039,16 @@ def plot_prior_posterior_parameter_density(
     latent_prior_samples: dict[str, Any],
     hmc_results: dict[str, Any]
 ) -> list[ggplot]:
+    """
+    Function to plot the density of prior- and posterior samples.
+
+    Args:
+        latent_prior_samples: Prior samples of the latent states (tilde theta).
+        hmc_results: Result of running the sample_conditional_posteriors() function.
+
+    Returns:
+        List of ggplot objects representing the plot of each DAG. 
+    """
      
     parameters = (
         "log_lateral_parameter", 
@@ -1036,7 +1158,18 @@ def plot_posterior_height_over_time(
     config: dict[str, Any],
     posterior_results: dict[str, tf.Tensor],
     Simulator: tf.Module,
-) -> None:
+) -> list[ggplot]:
+    """
+    Function to plot the posterior height distribution over time.
+    
+    Args:
+        config: Configurations dictionary.
+        posterior_results: Result of running the sample_conditional_posteriors() function.
+        Simulator: Simulator class.
+
+    Returns:
+        List of ggplot objects representing the plot of each DAG.
+    """
     
     time_grid = tf.linspace(
         0.0, 
@@ -1049,7 +1182,7 @@ def plot_posterior_height_over_time(
         dtype=tf.float32
     )
     
-    graph_encodings = tf.cast(  # shape: [B, R, R]
+    graph_encodings = tf.cast(
         tf.constant(  
             config["posterior"]["graphs"],
             dtype=tf.int32

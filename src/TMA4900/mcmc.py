@@ -13,18 +13,20 @@ class ConditionalPosterior(tf.Module):
     def __init__(
         self, 
         config: dict[str, Any],
-        measurements: tf.Tensor,  # shape: [B, T, R] 
-        times: tf.Tensor,  # shape: [B, T]
-        graph_encoding: tf.Tensor,  # shape: [B, R, R]
+        measurements: tf.Tensor,
+        times: tf.Tensor,
+        graph_encoding: tf.Tensor,
         Simulator: tf.Module = Simulator,
         LatentStatePrior: tf.Module = LatentStatePrior,
         AcquisitionModel: tf.Module = AcquisitionModel,
         name = None
     ) -> None:
         super().__init__(name)
-    
+
+        # measurements and measurement times
         self.measurements = measurements 
         self.times = times
+        
         self.graph_encoding = graph_encoding
         
         self.simulator = Simulator(
@@ -38,15 +40,23 @@ class ConditionalPosterior(tf.Module):
     def log_prob(
         self,
         latent_states: dict[str, tf.Tensor],
-    ) -> tf.Tensor:  # shape: [B]  
+    ) -> tf.Tensor:
+        """
+        Compute the full conditional log-probability of a set of latent states (tilde theta).
 
+        Args:
+            latent_states: Latent states (tilde theta).
+
+        Returns:
+            Computed full conditional log-probability.
+        """
         results = self.simulator.simulate( 
             "height", 
             latent_states=latent_states,
             graph_encoding=self.graph_encoding,
             times=self.times
         )
-        heights = results["simulated_values"] # shape: [B, T, R]
+        heights = results["simulated_values"]
         
         log_likelihood = self.acquisition_model.log_likelihood(
             measurements=self.measurements,
@@ -62,6 +72,7 @@ class ConditionalPosterior(tf.Module):
     
 class LatentStateKernel(tf.Module):
     
+    # tuple used internally to modify the structure of latent states (tilde theta)
     LATENT_STATES = (
         "log_lateral_parameter",
         "log_vertical_parameter",
@@ -80,23 +91,26 @@ class LatentStateKernel(tf.Module):
         
         self.conditional_posterior = conditional_posterior
         
+        # seed for reproducibility
         self.seed = tf.constant(
             config["general"]["seed"],
             dtype=tf.int32
         )
         
+        # parameters for the HMC kernel
         self.step_size = tf.constant(
             config["latent_state_kernel"]["step_size"],
             dtype=tf.float32
         )
-        
         self.num_leapfrog_steps = tf.constant(
             config["latent_state_kernel"]["number_of_leapfrog_steps"],
             dtype=tf.int32
         ) 
-    
+
+        # number of chains to run in parallel
         self.num_chains = tf.shape(self.conditional_posterior.measurements)[0]
     
+    # function to convert dictionary of latent states to a concatenated list    
     @staticmethod
     def _to_list(
         latent_states: dict[str, tf.Tensor]
@@ -105,13 +119,15 @@ class LatentStateKernel(tf.Module):
             latent_states[state] for state in LatentStateKernel.LATENT_STATES
         ]
     
+    # function to convert concatenated list of latent states to a dictionary
     @staticmethod
     def _to_dict(
         latent_states: Union[list[tf.Tensor], tuple[tf.Tensor]]
     ) -> dict[str, tf.Tensor]:        
         return dict(zip(LatentStateKernel.LATENT_STATES, latent_states))
     
-    def get_kernel(
+    # function to obtain the HMC transition kernel
+    def _get_kernel(
         self,
         num_adaptation_steps: int,
         target_accept_prob: float
@@ -148,7 +164,21 @@ class LatentStateKernel(tf.Module):
         num_burnin_steps: tf.Tensor,
         seed: Optional[tf.Tensor] = None,
         initial_states: Optional[dict[str, tf.Tensor]] = None
-    ):
+    ) -> tuple[dict[str, tf.Tensor], tf.Tensor, tf.Tensor]: 
+        """
+        Function to sample latent states (tilde theta) using HMC.
+
+        Args:
+            num_results: Number of samples to obtain in total.
+            num_burnin_steps: Number of burnin samples.
+            seed: Seed for reproducibility. 
+            If unspecified, default to internal seed.
+            initial_states: Initial latent states to start the kernel at.
+            If unspecified, a set of initial states are drawn from the prior distribution.
+
+        Returns:
+            Sampled states and kernel diagnostics.
+        """
         seed = self.seed if seed is None else seed
         initial_seed, hmc_seed = tfp.random.split_seed(seed)    
         
@@ -160,7 +190,7 @@ class LatentStateKernel(tf.Module):
                 )
             )
         
-        kernel = self.get_kernel(
+        kernel = self._get_kernel(
             num_adaptation_steps=tf.cast(
                 4 * num_burnin_steps / 5, 
                 dtype=tf.int32

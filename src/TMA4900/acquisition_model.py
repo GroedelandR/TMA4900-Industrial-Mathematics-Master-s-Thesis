@@ -14,11 +14,14 @@ class AcquisitionModel(tf.Module):
     ) -> None:
         super().__init__(name)
         
-        self.height_threshold = tf.constant(  # shape: [R]
+        # measurement threshold
+        self.height_threshold = tf.constant(
             config["acquisition"]["height_threshold"],
             dtype=tf.float32
         )  
-        self.acquisition_noise_variance = tf.constant(  # shape: [R]
+        
+        # model noise variance
+        self.acquisition_noise_variance = tf.constant(
             config["acquisition"]["acquisition_noise_variance"],
             dtype=tf.float32
         )
@@ -26,9 +29,19 @@ class AcquisitionModel(tf.Module):
     @tf.function
     def log_likelihood(
         self,
-        measurements: tf.Tensor,  # shape: [B, T, R]
-        heights: tf.Tensor  # shape: [B, T, R]
-    ) -> tf.Tensor: # shape: [B]
+        measurements: tf.Tensor,
+        heights: tf.Tensor
+    ) -> tf.Tensor:
+        """
+        Compute the log-likelihood of the plume heights for a given set of measurements.
+
+        Args:
+            measurements: Observed CO2 plume heights.
+            heights: Actual CO2 plume heights.
+
+        Returns:
+            Computed log-likelihood.
+        """
             
         kernel = tfd.Normal(
             loc=heights,

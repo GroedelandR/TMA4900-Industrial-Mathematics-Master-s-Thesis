@@ -36,11 +36,11 @@ Below is a brief description of each of the files within this directory,
 - **simulator.py** Contains the class *Simulator*, which is an implementation of the simulator discussed in the thesis.  
 To simulate the plume heights at time *t*, the method *Simulator.simulate()* is called.  
  
-- **priors.py** Contains the classes *LatentStatePrior* and *GraphPrior*, which are implementations of the prior on unconstrained continuous parameters $\boldsymbol{\tilde \theta}$ and DAGs $G$ respectively.  
+- **priors.py** Contains the class *LatentStatePrior*, which is an implementation of the prior on unconstrained continuous parameters $\boldsymbol{\tilde \theta}$.  
 We note that in the case of the unconstrained continuous parameters, the simulator makes the necessary transformations to obtain the corresponding constrained parameters $\boldsymbol{\theta}$.  
 This is done so that the McMC kernel can work in unconstrained space.  
-To sample from the priors, the methods *LatentStatePrior.sample()* and *GraphPrior.sample()* are called.  
-To compute the log-probability of a specific sample, the methods *LatentStatePrior.log_prob()* and *GraphPrior.log_prob()* are called instead.  
+To sample from the prior, the method *LatentStatePrior.sample()* is called.  
+To compute the log-probability of a specific sample, the method *LatentStatePrior.log_prob()* is called instead.  
 
 - **acquisition_model.py** Contains the class *AcquisitionModel*, which is an implementation of the acquisition/likelihood model discussed in the thesis.  
 To compute the log-likelihood of a given observation, the method *AcquisitionModel.log_likelihood()* is called.  
